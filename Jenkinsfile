@@ -42,12 +42,5 @@ pipeline {
     }
   }
 
-  post {
-    always {
-      script {
-        sh "docker stop webapp || true"
-        sh "docker rm webapp || true"
-      }
-    }
-  }
+  
 }
