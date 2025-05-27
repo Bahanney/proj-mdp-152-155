@@ -4,7 +4,6 @@ pipeline {
   environment {
     RUNTIME_HOST = "ec2-user@18.118.140.194"
     WAR_NAME     = "WebAppCal-1.3.5.war"
-    PROJECT_DIR  = "proj-mdp-152-155"
     SSH_KEY_PATH = "/home/jenkins/bee.pem"
     IMAGE_NAME   = "bahanney/webapp-calculator"
     IMAGE_TAG    = "${env.BUILD_NUMBER}"
@@ -20,17 +19,14 @@ pipeline {
 
     stage('Build WAR') {
       steps {
-        dir("${PROJECT_DIR}") {
-          sh "mvn clean package"
-        }
+        sh "ls -la"                      // ✅ You should see pom.xml here
+        sh "mvn clean package"
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        dir("${PROJECT_DIR}") {
-          sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-        }
+        sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
       }
     }
 
@@ -47,7 +43,7 @@ pipeline {
     stage('Copy WAR to Runtime Tomcat Server') {
       steps {
         sh """
-          scp -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${PROJECT_DIR}/target/${WAR_NAME} ${RUNTIME_HOST}:/home/ec2-user/
+          scp -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no target/${WAR_NAME} ${RUNTIME_HOST}:/home/ec2-user/
         """
       }
     }
