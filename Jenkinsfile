@@ -2,10 +2,10 @@ pipeline {
   agent any
 
   environment {
-    RUNTIME_HOST = "ec2-user@18.118.140.194" // 👈 Replace with real IP
+    RUNTIME_HOST = "ec2-user@18.118.140.194"
     WAR_NAME     = "WebAppCal-1.3.5.war"
     PROJECT_DIR  = "proj-mdp-152-155"
-    SSH_KEY_PATH = "/home/jenkins/bee.pem" // 👈 Replace with path to your private key on Jenkins EC2
+    SSH_KEY_PATH = "/home/jenkins/bee.pem"
   }
 
   stages {
@@ -17,7 +17,7 @@ pipeline {
 
     stage('Build WAR') {
       steps {
-        dir("${PROJECT_DIR}") {
+        dir("${PROJECT_DIR}/calculator") {
           sh "mvn clean package"
         }
       }
@@ -26,7 +26,7 @@ pipeline {
     stage('Copy WAR to Runtime Server') {
       steps {
         sh """
-          scp -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${PROJECT_DIR}/target/${WAR_NAME} ${RUNTIME_HOST}:/home/ec2-user/
+          scp -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${PROJECT_DIR}/calculator/target/${WAR_NAME} ${RUNTIME_HOST}:/home/ec2-user/
         """
       }
     }
@@ -45,4 +45,3 @@ pipeline {
     }
   }
 }
-
