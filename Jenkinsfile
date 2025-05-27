@@ -2,9 +2,10 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = "bahanney/webapp-calculator" // Replace with your Docker Hub username
-    IMAGE_TAG = "${env.BUILD_NUMBER}"
-    DOCKER_CREDENTIALS_ID = "docker-hub-credentials"
+    RUNTIME_HOST = "ec2-user@18.118.140.194" // 👈 Replace with real IP
+    WAR_NAME     = "WebAppCal-1.3.5.war"
+    PROJECT_DIR  = "proj-mdp-152-155"
+    SSH_KEY_PATH = "/home/jenkins/bee.pem" // 👈 Replace with path to your private key on Jenkins EC2
   }
 
   stages {
@@ -14,33 +15,34 @@ pipeline {
       }
     }
 
-    stage('Build Docker Image') {
+    stage('Build WAR') {
       steps {
-        script {
-          sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+        dir("${PROJECT_DIR}") {
+          sh "mvn clean package"
         }
       }
     }
 
-    stage('Push to Docker Hub') {
+    stage('Copy WAR to Runtime Server') {
       steps {
-        script {
-          docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
-            sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
-          }
-        }
+        sh """
+          scp -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${PROJECT_DIR}/target/${WAR_NAME} ${RUNTIME_HOST}:/home/ec2-user/
+        """
       }
     }
 
-    stage('Run Docker Container') {
+    stage('Deploy WAR on Tomcat') {
       steps {
-        script {
-          sh "docker rm -f webapp || true"
-          sh "docker run -d --name webapp -p 8090:8080 ${IMAGE_NAME}:${IMAGE_TAG}"
-        }
+        sh """
+          ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${RUNTIME_HOST} '
+            sudo mv /home/ec2-user/${WAR_NAME} /opt/apache-tomcat-9.0.91/webapps/${WAR_NAME} &&
+            /opt/apache-tomcat-9.0.91/bin/shutdown.sh || true &&
+            sleep 3 &&
+            /opt/apache-tomcat-9.0.91/bin/startup.sh
+          '
+        """
       }
     }
   }
-
-  
 }
+
