@@ -1,0 +1,27 @@
+- hosts: k8s_master
+  become: yes
+  tasks:
+    - name: Install AWS CLI
+      apt:
+        name: awscli
+        state: present
+        update_cache: yes
+    - name: Install Kops
+      get_url:
+        url: https://github.com/kubernetes/kops/releases/download/v1.16.0/kops-linux-amd64
+        dest: /usr/local/bin/kops
+        mode: '0755'
+    - name: Install Kubectl
+      get_url:
+        url: https://dl.k8s.io/release/v1.16.0-alpha.0/bin/linux/amd64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+    - name: Install dependencies
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+          - unzip
+          - python3-pip
